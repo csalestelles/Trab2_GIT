@@ -536,6 +536,15 @@ rnTree *lowerMajor(rnTree *root)
     return aux;
 }
 
+int isBlack(rnTree *node)
+{
+    if (node == NULL || node->color == BLACK)
+    {
+        return TRUE;
+    }
+    return FALSE;
+}
+
 rnTree *removeFromTree(rnTree *root, rnTree *node)
 {
     rnTree *aux;
@@ -553,13 +562,14 @@ rnTree *removeFromTree(rnTree *root, rnTree *node)
                 root = leftRotation(root, node->father);
                 aux = node->father->right;
             }
-            if(aux->left->color == BLACK && aux->right->color == BLACK)
+            if(isBlack(aux->left) == TRUE && isBlack(aux->right) == TRUE)
             {//CASO 2
                 aux->color = RED;
                 node = node->father;
             }
-            else{
-                if(aux->right->color == BLACK)
+            else
+            {
+                if(isBlack(aux->right) == TRUE)
                 { //CASO 3
                     aux->left->color = BLACK;
                     aux->color = RED;
@@ -576,32 +586,36 @@ rnTree *removeFromTree(rnTree *root, rnTree *node)
         else
         {
             aux = node->father->left;
-            if(aux->color == RED)
+            
+            if(isBlack(aux->left) == TRUE)
             {
-                aux->color = BLACK;
-                node->father->color = RED;
-                root = rightRotation(root, node->father);
-                aux = node->father->left;
-            }
-            if(aux->right->color == BLACK && aux->left->color == BLACK)
-            {
+                aux->right->color = BLACK;
                 aux->color = RED;
-                node = node->father;
-            }
-            else
-            {
-                if(aux->left->color == BLACK)
-                {
-                    aux->right->color = BLACK;
-                    aux->color = RED;
-                    root = leftRotation(root, aux);
-                    aux = node->father->left;
-                }
+                root = leftRotation(root, aux);
+                aux = node->father->left;
+                
                 aux->color = node->father->color;
                 node->father->color = BLACK;
                 aux->left->color = BLACK;
                 root = rightRotation(root, node->father);
                 node = root;
+            }
+            
+            else
+            {
+                if(aux->color == RED)
+                {
+                    aux->color = BLACK;
+                    node->father->color = RED;
+                    root = rightRotation(root, node->father);
+                    aux = node->father->left;
+                }
+                if(isBlack(aux->right) == TRUE && isBlack(aux->left) == TRUE)
+                {
+                    aux->color = RED;
+                    node = node->father;
+                }
+
             }
         }
     }
@@ -643,7 +657,7 @@ rnTree *removeNode(rnTree *root, int value)
     
     if(aux1->left != NULL)
         aux2 = aux1->left;
-    else
+    else if (aux1->right != NULL)
         aux2 = aux1->right;
     
     if (aux2 != NULL)
@@ -654,6 +668,7 @@ rnTree *removeNode(rnTree *root, int value)
     
     if(aux1->father == NULL)
         root = aux2;
+    
     else
     {
         if(aux1 == aux1->father->left)
@@ -666,6 +681,8 @@ rnTree *removeNode(rnTree *root, int value)
         node->key = aux1->key;
     if(aux1->color == BLACK)
         root = removeFromTree(root, aux2);
+    else
+        aux2 = NULL;
     
     return root;
 }
