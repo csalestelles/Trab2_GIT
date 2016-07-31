@@ -34,9 +34,10 @@ typedef struct no{
 
 //----------------------------------> Variáveis globais
 
-TipoNo *nil;
-int sideofNode, count, Opcoes;
+TipoNo *nil, *auxFather;
+int count, Opcoes;
 
+TipoNo *ProcuraNo(TipoNo *raiz, int elemento);
 
 //----------------------------------> Criação e alocação do nó
 
@@ -50,7 +51,7 @@ TipoNo *CriarNo(int elemento){
     novo->esquerdo = nil;
     novo->direito = nil;
     novo->chave = elemento;
-    novo->cor = PRETO;
+    novo->cor = VERMELHO;
     return novo;
 }
 
@@ -101,89 +102,187 @@ TipoNo *RotacaoDireita(TipoNo *raiz, TipoNo *No_A){
 
 //----------------------------------> Inserção e "Balanceamento" das cores
 
-TipoNo *InserirNaArvore(TipoNo *raiz, TipoNo *novo){
-    while(novo != raiz && novo->pai->cor == VERMELHO){
-        if(novo->pai == novo->pai->pai->esquerdo){
-            TipoNo *aux = novo->pai->pai->direito;
-            if(aux->cor == VERMELHO){ //CASO 1
-                novo->pai->cor = PRETO;
-                aux->cor = PRETO;
-                novo->pai->pai->cor = VERMELHO;
-                novo = novo->pai->pai;
-            }
-            else{
-                if(novo == novo->pai->direito){ //CASO 2
-                    novo = novo->pai;
-                    raiz = RotacaoEsquerda(raiz, novo);
-                }
-                novo->pai->cor = PRETO;   //CASO 3
-                novo->pai->pai->cor = VERMELHO;
-                raiz = RotacaoDireita(raiz, novo->pai->pai);
-            }
-        }
-        else{
-            if(novo->pai == novo->pai->pai->direito){
-                TipoNo *aux = novo->pai->pai->esquerdo;
-                if(aux->cor == VERMELHO){
-                    novo->pai->cor = PRETO;
-                    aux->cor = PRETO;
-                    novo->pai->pai->cor = VERMELHO;
-                    novo = novo->pai->pai;
-                }
-                else{
-                    if(novo == novo->pai->esquerdo){
-                        novo = novo->pai;
-                        raiz = RotacaoDireita(raiz, novo);
-                    }
-                    novo->pai->cor = PRETO;
-                    novo->pai->pai->cor = VERMELHO;
-                    raiz = RotacaoEsquerda(raiz, novo->pai->pai);
-                }
-            }
-        }
-    }
-    raiz->cor = PRETO;
-    return raiz;
-}
-TipoNo *InserirNo(TipoNo *raiz, int elemento){
-    TipoNo *novo = CriarNo(elemento);
-    TipoNo *atual = nil;
-    TipoNo *aux = raiz;
-    if(raiz == nil){
-        raiz = CriarNo(novo->chave);
-        raiz->cor = PRETO;
-        return raiz;
-    }
-    while(aux != nil){
-        atual = aux;
-        if(novo->chave < aux->chave)
-            aux = aux->esquerdo;
-        else if(novo->chave > aux->chave)
-            aux = aux->direito;
-        else{
-            printf("O elemento %d ja existe na Arvore!!!\n\n",novo->chave);
-            return raiz;
-        }
-    }
-    novo->pai = atual;
-    if(atual == nil)
-        raiz = novo;
-    else if(novo->chave < atual->chave)
-        atual->esquerdo = novo;
+int compara(int key1, int key2)
+{
+    if (key1 == key2)
+        return 0;
+    
+    else if (key2 < key1)
+        return -1;
+    
     else
-        atual->direito = novo;
-    
-    novo->esquerdo = nil;
-    novo->direito = nil;
-    novo->cor = VERMELHO;
-    
-    raiz = InserirNaArvore(raiz, novo);
-    return raiz;
+        return 1;
+        
+}
+
+int eVermelho(TipoNo *node)
+{
+    if (node != nil && node->cor == VERMELHO)
+        return TRUE;
+    else
+        return FALSE;
 }
 
 
+int eFilhoEsquerdo(TipoNo *node)
+{
+    if (node == node->pai->esquerdo)
+        return TRUE;
+    else
+        return FALSE;
+}
+
+void raizNegra(TipoNo *root)
+{
+    if (root)
+        root->cor = PRETO;
+}
+
+TipoNo *insere(TipoNo *root, TipoNo *node)
+{
+    int aux;
+    
+    if (root == nil)
+    {
+        node->pai = auxFather;
+        return node;
+    }
+    else
+    {
+        aux = compara(root->chave, node->chave);
+        
+        if (aux ==  0)
+            printf("\nNó já se encontra na árvore!\n\n");
+        
+        else if (aux < 0)
+        {
+            auxFather = root;
+            root->esquerdo = insere(root->esquerdo, node);
+        }
+        else
+        {
+            auxFather = root;
+            root->direito = insere(root->direito, node);
+        }
+        
+    }
+    
+    return root;
+}
 
 
+//-------> Tratamento dos casos na Inserção
+
+
+void caso_1(TipoNo *node, TipoNo *nodeAux)
+{
+    node->pai->cor = PRETO;
+    nodeAux->cor = PRETO;
+    node->pai->pai->cor = VERMELHO;
+    node = node->pai->pai;
+}
+
+void case_2(TipoNo *root, TipoNo *node)
+{
+    node->pai->cor = PRETO;
+    node->pai->pai->cor = VERMELHO;
+    if (eFilhoEsquerdo(node->pai) == TRUE)
+        root = RotacaoDireita(root, node->pai->pai);
+    else
+        root = RotacaoEsquerda(root, node->pai->pai);
+}
+
+void caso_3(TipoNo *root, TipoNo *node)
+{
+    node= node->pai;
+    if (eFilhoEsquerdo(node) == FALSE)
+        root = RotacaoEsquerda(root, node);
+    else
+        root = RotacaoDireita(root, node);
+}
+
+void caso_4(TipoNo *node, TipoNo *nodeAux)    //caso 4 igual caso 1
+{
+    node->pai->cor = PRETO;
+    nodeAux->cor = PRETO;
+    node->pai->pai->cor = VERMELHO;
+    node = node->pai->pai;
+}
+
+void caso_5(TipoNo *root, TipoNo *node)
+{
+    node->pai->cor = PRETO;
+    node->pai->pai->cor = VERMELHO;
+    root = RotacaoEsquerda(root, node->pai->pai);
+}
+
+void caso_6(TipoNo *root, TipoNo *node)
+{
+    node = node->pai;
+    root = RotacaoDireita(root, node);
+}
+
+
+TipoNo *insere_RN(TipoNo *root, int value)
+{
+    root = insere(root, CriarNo(value));
+    raizNegra(root);
+    
+    TipoNo *auxiliar;
+    TipoNo *node = ProcuraNo(root, value);
+    
+    if (node->pai != nil && eVermelho(node->pai) == TRUE)
+    {
+        if (eFilhoEsquerdo(node->pai) == TRUE)
+        {
+            auxiliar = node->pai->pai->direito;
+            
+            if (auxiliar != nil && eVermelho(auxiliar) == TRUE)
+            {
+                node->pai->cor = PRETO;
+                auxiliar->cor = PRETO;
+                node->pai->pai->cor = VERMELHO;
+                node = node->pai->pai;
+            }
+            else
+            {
+                if (eFilhoEsquerdo(node) == FALSE)
+                {
+                    node= node->pai;
+                    root = RotacaoEsquerda(root, node);
+                }
+                node->pai->cor = PRETO;
+                node->pai->pai->cor = VERMELHO;
+                root = RotacaoDireita(root, node->pai->pai);
+            }
+        }
+        else
+        {
+            auxiliar = node->pai->pai->esquerdo;
+            
+            if (auxiliar != nil && eVermelho(auxiliar) == TRUE)
+            {
+                node->pai->cor = PRETO;
+                auxiliar->cor = PRETO;
+                node->pai->pai->cor = VERMELHO;
+                node = node->pai->pai;
+            }
+            else
+            {
+                if (eFilhoEsquerdo(node) == TRUE)
+                {
+                    node = node->pai;
+                    root = RotacaoDireita(root, node);
+                }
+                node->pai->cor = PRETO;
+                node->pai->pai->cor = VERMELHO;
+                root = RotacaoEsquerda(root, node->pai->pai);
+            }
+        }
+    }
+    
+    return root;
+}
 
 
 //----------------------------------> Percorrimento na árvorem nas três maneiras
@@ -311,7 +410,7 @@ TipoNo *ProcuraNo(TipoNo *raiz, int elemento){
             aux = aux->esquerdo;
         else if (elemento > aux->chave)
             aux = aux->direito;
-        else if (elemento == aux->chave)
+        else
             return aux;
     }
     return NULL;
@@ -365,7 +464,8 @@ void Inserir(TipoNo **raiz){
     scanf("%d", &elemento);
     printf("\n\n");
     
-    *raiz = InserirNo(*raiz, elemento);
+    *raiz = insere_RN(*raiz, elemento);
+    raizNegra(*raiz);
 }
 void Remover(TipoNo **raiz){
     int elemento;
@@ -421,7 +521,7 @@ int eIgual(TipoNo *p, TipoNo *q){
 int recebeAltura(TipoNo *treep, TipoNo *p){
     if(treep == nil || p == nil)
         return 0;
-    if(isequal(treep, p) == TRUE)
+    if(eIgual(treep, p) == TRUE)
         return 0;
     else if(treep->chave > p->chave)
         return recebeAltura(treep->esquerdo, p) + 1;
@@ -495,6 +595,7 @@ void SelecionarOpcao(TipoNo **raiz,int value){
 
 int main(){
     nil = (TipoNo*)malloc(sizeof(TipoNo));
+    auxFather = nil;
     TipoNo *raiz = nil;
     Opcoes = Menu();
     SelecionarOpcao(&raiz,Opcoes);
