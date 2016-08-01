@@ -213,9 +213,9 @@ TipoNo *caso_2(TipoNo *root, TipoNo *node)
     node->pai->cor = PRETO;
     node->pai->pai->cor = node->cor;
     if (eFilhoEsquerdo(node) == TRUE)
-        node->pai->pai = RotacaoDireita(root, node->pai->pai);
+        root = RotacaoDireita(root, node->pai->pai);
     else if (eFilhoEsquerdo(node) == FALSE)
-        node->pai->pai = RotacaoEsquerda(root, node->pai->pai);
+        root = RotacaoEsquerda(root, node->pai->pai);
     
     return root;
 }
