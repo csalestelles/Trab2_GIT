@@ -156,8 +156,10 @@ TipoNo *recebeTio(TipoNo *node)
 {
     if (node->pai != nil && node->pai == node->pai->pai->esquerdo)
         return node->pai->pai->direito;
-    else
+    else if (node->pai != nil)
         return node->pai->pai->esquerdo;
+    
+    return nil;
 }
 
 TipoNo *insere(TipoNo *root, TipoNo *node)
@@ -208,10 +210,12 @@ TipoNo *caso_1(TipoNo *root, TipoNo *node, TipoNo *nodeAux)
 
 TipoNo *caso_2(TipoNo *root, TipoNo *node)
 {
+    node->pai->cor = PRETO;
+    node->pai->pai->cor = node->cor;
     if (eFilhoEsquerdo(node) == TRUE)
-        root = RotacaoDireita(root, node->pai);
+        node->pai->pai = RotacaoDireita(root, node->pai->pai);
     else if (eFilhoEsquerdo(node) == FALSE)
-        root = RotacaoEsquerda(root, node->pai);
+        node->pai->pai = RotacaoEsquerda(root, node->pai->pai);
     
     return root;
 }
@@ -223,10 +227,14 @@ TipoNo *caso_3(TipoNo *root, TipoNo *node, TipoNo *nodeAux)
         node->cor = PRETO;
         node->pai->pai->cor = VERMELHO;
         root = RotacaoEsquerda(root, nodeAux);
+        root = RotacaoDireita(root, node->pai);
     }
     else if (eFilhoEsquerdo(node) == TRUE && eFilhoEsquerdo(nodeAux) == FALSE)
     {
+        node->cor = PRETO;
+        node->pai->pai->cor = VERMELHO;
         root = RotacaoDireita(root, nodeAux);
+        root = RotacaoEsquerda(root, node->pai);
     }
     
     return root;
@@ -249,8 +257,11 @@ TipoNo *insere_RN(TipoNo *root, int value)
         }
         else
         {
-            root = caso_3(root, node, node->pai);
-            root = caso_2(root, node);
+            if (eFilhoEsquerdo(node) != eFilhoEsquerdo(node->pai))
+                root = caso_3(root, node, node->pai);
+            else
+                root = caso_2(root, node);
+            
         }
     }
     return root;
