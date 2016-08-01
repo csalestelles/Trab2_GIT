@@ -41,6 +41,16 @@ TipoNo *ProcuraNo(TipoNo *raiz, int elemento);
 
 //----------------------------------> Criação e alocação do nó
 
+TipoNo *createNil(TipoNo *node)
+{
+    node->esquerdo = nil;
+    node->direito = nil;
+    node->pai = nil;
+    
+    return node;
+}
+
+
 TipoNo *CriarNo(int elemento){
     TipoNo *novo = (TipoNo*)malloc(sizeof(TipoNo));
     if(novo == nil){
@@ -58,7 +68,10 @@ TipoNo *CriarNo(int elemento){
 
 //----------------------------------> ROtações
 
-TipoNo *RotacaoEsquerda(TipoNo *raiz, TipoNo *No_A){
+
+
+TipoNo *RotacaoEsquerda(TipoNo *raiz, TipoNo *No_A)
+{
     TipoNo *No_B = No_A->direito;
     No_A->direito = No_B->esquerdo;
     if(No_B->esquerdo != nil)
@@ -76,6 +89,7 @@ TipoNo *RotacaoEsquerda(TipoNo *raiz, TipoNo *No_A){
     No_A->pai = No_B;
     return raiz;
 }
+
 TipoNo *RotacaoDireita(TipoNo *raiz, TipoNo *No_A){
     TipoNo *No_B = No_A->esquerdo;
     No_A->esquerdo = No_B->direito;
@@ -138,6 +152,14 @@ void raizNegra(TipoNo *root)
         root->cor = PRETO;
 }
 
+TipoNo *recebeTio(TipoNo *node)
+{
+    if (node->pai != nil && node->pai == node->pai->pai->esquerdo)
+        return node->pai->pai->direito;
+    else
+        return node->pai->pai->esquerdo;
+}
+
 TipoNo *insere(TipoNo *root, TipoNo *node)
 {
     int aux;
@@ -174,52 +196,40 @@ TipoNo *insere(TipoNo *root, TipoNo *node)
 //-------> Tratamento dos casos na Inserção
 
 
-void caso_1(TipoNo *node, TipoNo *nodeAux)
+TipoNo *caso_1(TipoNo *root, TipoNo *node, TipoNo *nodeAux)
 {
     node->pai->cor = PRETO;
     nodeAux->cor = PRETO;
     node->pai->pai->cor = VERMELHO;
     node = node->pai->pai;
+    
+    return root;
 }
 
-void case_2(TipoNo *root, TipoNo *node)
+TipoNo *caso_2(TipoNo *root, TipoNo *node)
 {
-    node->pai->cor = PRETO;
-    node->pai->pai->cor = VERMELHO;
-    if (eFilhoEsquerdo(node->pai) == TRUE)
-        root = RotacaoDireita(root, node->pai->pai);
-    else
-        root = RotacaoEsquerda(root, node->pai->pai);
+    if (eFilhoEsquerdo(node) == TRUE)
+        root = RotacaoDireita(root, node->pai);
+    else if (eFilhoEsquerdo(node) == FALSE)
+        root = RotacaoEsquerda(root, node->pai);
+    
+    return root;
 }
 
-void caso_3(TipoNo *root, TipoNo *node)
+TipoNo *caso_3(TipoNo *root, TipoNo *node, TipoNo *nodeAux)
 {
-    node= node->pai;
-    if (eFilhoEsquerdo(node) == FALSE)
-        root = RotacaoEsquerda(root, node);
-    else
-        root = RotacaoDireita(root, node);
-}
-
-void caso_4(TipoNo *node, TipoNo *nodeAux)    //caso 4 igual caso 1
-{
-    node->pai->cor = PRETO;
-    nodeAux->cor = PRETO;
-    node->pai->pai->cor = VERMELHO;
-    node = node->pai->pai;
-}
-
-void caso_5(TipoNo *root, TipoNo *node)
-{
-    node->pai->cor = PRETO;
-    node->pai->pai->cor = VERMELHO;
-    root = RotacaoEsquerda(root, node->pai->pai);
-}
-
-void caso_6(TipoNo *root, TipoNo *node)
-{
-    node = node->pai;
-    root = RotacaoDireita(root, node);
+    if (eFilhoEsquerdo(node) == FALSE && eFilhoEsquerdo(nodeAux) == TRUE)
+    {
+        node->cor = PRETO;
+        node->pai->pai->cor = VERMELHO;
+        root = RotacaoEsquerda(root, nodeAux);
+    }
+    else if (eFilhoEsquerdo(node) == TRUE && eFilhoEsquerdo(nodeAux) == FALSE)
+    {
+        root = RotacaoDireita(root, nodeAux);
+    }
+    
+    return root;
 }
 
 
@@ -228,59 +238,21 @@ TipoNo *insere_RN(TipoNo *root, int value)
     root = insere(root, CriarNo(value));
     raizNegra(root);
     
-    TipoNo *auxiliar;
     TipoNo *node = ProcuraNo(root, value);
+    TipoNo *auxiliar = recebeTio(node);
     
     if (node->pai != nil && eVermelho(node->pai) == TRUE)
     {
-        if (eFilhoEsquerdo(node->pai) == TRUE)
+        if (auxiliar != nil && eVermelho(auxiliar) == TRUE)
         {
-            auxiliar = node->pai->pai->direito;
-            
-            if (auxiliar != nil && eVermelho(auxiliar) == TRUE)
-            {
-                node->pai->cor = PRETO;
-                auxiliar->cor = PRETO;
-                node->pai->pai->cor = VERMELHO;
-                node = node->pai->pai;
-            }
-            else
-            {
-                if (eFilhoEsquerdo(node) == FALSE)
-                {
-                    node= node->pai;
-                    root = RotacaoEsquerda(root, node);
-                }
-                node->pai->cor = PRETO;
-                node->pai->pai->cor = VERMELHO;
-                root = RotacaoDireita(root, node->pai->pai);
-            }
+            root = caso_1(root, node, auxiliar);
         }
         else
         {
-            auxiliar = node->pai->pai->esquerdo;
-            
-            if (auxiliar != nil && eVermelho(auxiliar) == TRUE)
-            {
-                node->pai->cor = PRETO;
-                auxiliar->cor = PRETO;
-                node->pai->pai->cor = VERMELHO;
-                node = node->pai->pai;
-            }
-            else
-            {
-                if (eFilhoEsquerdo(node) == TRUE)
-                {
-                    node = node->pai;
-                    root = RotacaoDireita(root, node);
-                }
-                node->pai->cor = PRETO;
-                node->pai->pai->cor = VERMELHO;
-                root = RotacaoEsquerda(root, node->pai->pai);
-            }
+            root = caso_3(root, node, node->pai);
+            root = caso_2(root, node);
         }
     }
-    
     return root;
 }
 
